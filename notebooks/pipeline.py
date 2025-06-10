@@ -75,13 +75,9 @@ def train_model(model, loss_function, optimizer, train_loader, test_loader, n_ep
 
 
         model.eval()
-        metrics = {
-            'accuracy': [],
-            'f1_score': [],
-            'precision': [],
-            'recall': []
-        }
         test_loss = 0.0
+        all_preds = []
+        all_targets = []
         with torch.no_grad():
             for X_batch, y_batch in test_loader:
                 if cuda.is_available():
@@ -90,12 +86,16 @@ def train_model(model, loss_function, optimizer, train_loader, test_loader, n_ep
                 y_pred = model(X_batch)
                 loss = loss_function(y_pred, y_batch)
                 test_loss += loss.item() * X_batch.size(0)
+                all_preds.append(torch.sigmoid(y_pred).cpu().numpy())
+                all_targets.append(y_batch.cpu().numpy())
             test_loss /= len(test_loader.dataset)
+        all_preds = np.vstack(all_preds)
+        all_targets = np.vstack(all_targets)
         print(f"Epoch {epoch+1} - Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}")
-        print(f'Epoch {epoch+1} - Accuracy: {accuracy_score(y_test.cpu().numpy(), (torch.sigmoid(y_pred) > 0.5).cpu().numpy())}')
-        print(f'Epoch {epoch+1} - F1 Score: {f1_score(y_test.cpu().numpy(), (torch.sigmoid(y_pred) > 0.5).cpu().numpy(), average="weighted")}')
-        print(f'Epoch {epoch+1} - Precision: {precision_score(y_test.cpu().numpy(), (torch.sigmoid(y_pred) > 0.5).cpu().numpy(), average="weighted")}')
-        print(f'Epoch {epoch+1} - Recall: {recall_score(y_test.cpu().numpy(), (torch.sigmoid(y_pred) > 0.5).cpu().numpy(), average="weighted")}')
+        print(f'Epoch {epoch+1} - Accuracy: {accuracy_score(all_targets, all_preds > 0.5)}')
+        print(f'Epoch {epoch+1} - F1 Score: {f1_score(all_targets, all_preds > 0.5, average="weighted")}')
+        print(f'Epoch {epoch+1} - Precision: {precision_score(all_targets, all_preds > 0.5, average="weighted")}')
+        print(f'Epoch {epoch+1} - Recall: {recall_score(all_targets, all_preds > 0.5, average="weighted")}')
 
 
 train_model(model, loss_function, optimizer, test_loader, train_loader, n_epochs=5)
