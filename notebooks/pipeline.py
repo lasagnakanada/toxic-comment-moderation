@@ -7,6 +7,7 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.linear_model import LogisticRegression
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.model_selection import train_test_split
+from torch import cuda
         
 os.chdir("/Users/dmitrijkrysko/Desktop/revetg.com/GIT/toxic-comment-moderation")
 
@@ -26,12 +27,11 @@ model = nn.Sequential(
     nn.ReLU(),
     nn.Linear(1000, 6),
     nn.Sigmoid()
+    
 )
 
 loss_function = nn.BCEWithLogitsLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-
 
 
 
@@ -57,13 +57,4 @@ def train_model(model, loss_function, optimizer, X_train, y_train, X_test, y_tes
             print(f"Epoch {epoch+1} - Loss: {loss.item()}, Test Loss: {test_loss.item()}")
 
 train_model(model, loss_function, optimizer, X_train, y_train, X_test, y_test, n_epochs=10)
-
-
-
-
-
-
-
-
-
 
