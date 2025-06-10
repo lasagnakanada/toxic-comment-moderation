@@ -8,6 +8,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.model_selection import train_test_split
 from torch import cuda
+from torch.utils.data import DataLoader, TensorDataset
+import numpy as np
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
+# Path to the project directory
+# Change this to your project directory
+# os.chdir("/path/to/your/project/directory")
         
 os.chdir("/Users/dmitrijkrysko/Desktop/revetg.com/GIT/toxic-comment-moderation")
 
@@ -21,17 +27,21 @@ X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = 0.2, random
 
 
 model = nn.Sequential(
-    nn.Linear(10000, 1000),
+    nn.Linear(10000, 5000),
     nn.Sigmoid(),
-    nn.Linear(1000, 1000),
-    nn.ReLU(),
-    nn.Linear(1000, 6),
-    nn.Sigmoid()
-    
+    nn.Dropout(p=0.4),
+    nn.Linear(5000, 2000),
+    nn.Sigmoid(),
+    nn.Dropout(p=0.4),
+    nn.Linear(2000, 6),
 )
 
+batch_size = 128
 loss_function = nn.BCEWithLogitsLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+if cuda.is_available():
+    model = model.cuda()
+    loss_function = loss_function.cuda()
 
 
 
@@ -41,20 +51,52 @@ X_test = torch.tensor(X_test, dtype=torch.float32)
 y_train = torch.tensor(y_train, dtype=torch.float32)
 y_test = torch.tensor(y_test, dtype=torch.float32)
 
-def train_model(model, loss_function, optimizer, X_train, y_train, X_test, y_test, n_epochs):
+train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=batch_size, shuffle=True)
+test_loader  = DataLoader(TensorDataset(X_test,  y_test),  batch_size=batch_size, shuffle=False)
+
+
+def train_model(model, loss_function, optimizer, train_loader, test_loader, n_epochs):
     for epoch in range(n_epochs):
-        model.train()
-        optimizer.zero_grad()
-        y_pred = model(X_train)
-        loss = loss_function(y_pred, y_train)
-        loss.backward()
-        optimizer.step()
+        train_loss = 0.0
+        for X_batch, y_batch in train_loader:
+            if cuda.is_available():
+                X_batch = X_batch.cuda()
+                y_batch = y_batch.cuda()
+
+            # Forward pass
+            model.train()
+            optimizer.zero_grad()
+            y_pred = model(X_batch)
+            loss = loss_function(y_pred, y_batch)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item() * X_batch.size(0)
+        train_loss /= len(train_loader.dataset)
+
 
         model.eval()
+        metrics = {
+            'accuracy': [],
+            'f1_score': [],
+            'precision': [],
+            'recall': []
+        }
+        test_loss = 0.0
         with torch.no_grad():
-            y_pred = model(X_test)
-            test_loss = loss_function(y_pred, y_test)
-            print(f"Epoch {epoch+1} - Loss: {loss.item()}, Test Loss: {test_loss.item()}")
+            for X_batch, y_batch in test_loader:
+                if cuda.is_available():
+                    X_batch = X_batch.cuda()
+                    y_batch = y_batch.cuda()
+                y_pred = model(X_batch)
+                loss = loss_function(y_pred, y_batch)
+                test_loss += loss.item() * X_batch.size(0)
+            test_loss /= len(test_loader.dataset)
+        print(f"Epoch {epoch+1} - Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}")
+        print(f'Epoch {epoch+1} - Accuracy: {accuracy_score(y_test.cpu().numpy(), (torch.sigmoid(y_pred) > 0.5).cpu().numpy())}')
+        print(f'Epoch {epoch+1} - F1 Score: {f1_score(y_test.cpu().numpy(), (torch.sigmoid(y_pred) > 0.5).cpu().numpy(), average="weighted")}')
+        print(f'Epoch {epoch+1} - Precision: {precision_score(y_test.cpu().numpy(), (torch.sigmoid(y_pred) > 0.5).cpu().numpy(), average="weighted")}')
+        print(f'Epoch {epoch+1} - Recall: {recall_score(y_test.cpu().numpy(), (torch.sigmoid(y_pred) > 0.5).cpu().numpy(), average="weighted")}')
 
-train_model(model, loss_function, optimizer, X_train, y_train, X_test, y_test, n_epochs=10)
+
+train_model(model, loss_function, optimizer, test_loader, train_loader, n_epochs=5)
 
