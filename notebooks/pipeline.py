@@ -93,9 +93,12 @@ def train_model(model, loss_function, optimizer, train_loader, test_loader, n_ep
         all_targets = np.vstack(all_targets)
         print(f"Epoch {epoch+1} - Train Loss: {train_loss:.4f}, Test Loss: {test_loss:.4f}")
         print(f'Epoch {epoch+1} - Accuracy: {accuracy_score(all_targets, all_preds > 0.5)}')
-        print(f'Epoch {epoch+1} - F1 Score: {f1_score(all_targets, all_preds > 0.5, average="weighted")}')
+        print(f'Epoch {epoch+1} - F1 Score: {f1_score(all_targets, all_preds > 0.5, average="micro")}')
         print(f'Epoch {epoch+1} - Precision: {precision_score(all_targets, all_preds > 0.5, average="weighted")}')
         print(f'Epoch {epoch+1} - Recall: {recall_score(all_targets, all_preds > 0.5, average="weighted")}')
+        print("Mean prediction (per label):", all_preds.mean(axis=0))
+        print("Number of samples with any positive prediction:", (all_preds > 0.5).sum())
+        print("Total samples:", all_preds.shape[0])
 
 
 train_model(model, loss_function, optimizer, test_loader, train_loader, n_epochs=5)
