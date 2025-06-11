@@ -28,8 +28,11 @@ class ToxicClassifier(nn.Module):
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size//2)
         self.fc3 = nn.Linear(hidden_size//2, output_size)    
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.4)
         self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+        self.batch_norm1 = nn.BatchNorm1d(hidden_size)
+        self.batch_norm2 = nn.BatchNorm1d(hidden_size//2)
 
 
     def data_preprocessing(self, X: np.ndarray, y: np.ndarray) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -45,9 +48,9 @@ class ToxicClassifier(nn.Module):
         return self.X_train, self.X_test, self.y_train, self.y_test, self.X_val, self.y_val
 
     def forward(self, input_data: torch.Tensor) -> torch.Tensor:
-        x = self.relu(self.fc1(input_data))
+        x = self.relu(self.batch_norm1(self.fc1(input_data)))
         x = self.dropout(x)
-        x = self.relu(self.fc2(x))
+        x = self.relu(self.batch_norm2(self.fc2(x)))
         x = self.dropout(x) 
         x = self.fc3(x)
         return x
@@ -66,7 +69,7 @@ class ToxicClassifier(nn.Module):
         self.to(device)
         X_train = X_train.to(device)
         y_train = y_train.to(device)
-        optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=1e-5)
         pos_counts = y_train.sum(axis=0)
         neg_counts = y_train.shape[0] - pos_counts
         pos_weight = torch.tensor(neg_counts / pos_counts, dtype=torch.float32)
@@ -104,5 +107,5 @@ class ToxicClassifier(nn.Module):
 if __name__ == "__main__":
     our_model = ToxicClassifier(input_size=10000, hidden_size=500, output_size=6)
     our_model.data_preprocessing(X, y)
-    our_model.train_model(our_model.X_train, our_model.y_train, our_model.X_val, our_model.y_val, epochs=30, learning_rate=0.01)
+    our_model.train_model(our_model.X_train, our_model.y_train, our_model.X_val, our_model.y_val, epochs=30, learning_rate=0.001)
     
