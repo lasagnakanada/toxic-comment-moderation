@@ -1,6 +1,6 @@
 # toxic-comment-moderation
 
-After EDA it was observed that amount of comments which could are toxic in general is 22%. By splitting all toxic comments into separate classes as:
+After EDA it was observed that amount of comments which could be toxic in general is 22%. By splitting all toxic comments into separate classes as:
 
 'toxic' 
 'severe_toxic'
