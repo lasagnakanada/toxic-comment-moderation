@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classification Result</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        h2, h3 {
+            color: #2c3e50;
+        }
+        .comment-text {
+            background-color: #ecf0f1;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-style: italic;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .label-name {
+            font-weight: 500;
+        }
+        .prediction {
+            font-weight: bold;
+        }
+        .pred-yes {
+            color: #e74c3c; /* Red for toxic */
+        }
+        .pred-no {
+            color: #2ecc71; /* Green for not toxic */
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            background-color: #3498db;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .back-link:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Classification Result</h2>
+        <p class="comment-text"><em>{{ text }}</em></p>
+        <h3>Predictions:</h3>
+        <ul>
+        {% for label, prob, pred in results %}
+            <li>
+                <span class="label-name">{{ label.replace('_', ' ')|title }}:</span>
+                <span>
+                    {{ "%.2f"|format(prob) }}
+                    (<strong class="prediction {{ 'pred-yes' if pred else 'pred-no' }}">
+                        {{ 'YES' if pred else 'NO' }}
+                    </strong>)
+                </span>
+            </li>
+        {% endfor %}
+        </ul>
+        <a href="/" class="back-link">Try another comment</a>
+    </div>
+</body>
+</html>

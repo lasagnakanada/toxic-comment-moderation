@@ -1,0 +1,17 @@
+# Git
+.git
+.gitignore
+
+# IDE settings
+.idea/
+*.iml
+
+# Python cache and virtual environments
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Files that should not be in the production container
+/data/
+/notebooks/
